@@ -77,7 +77,7 @@ public class Main extends SimpleApplication {
     }
     
     public void goGame( SessionStartData session_start_data ) {
-        game_session_controller = new GameSessionController(session_start_data);
+        game_session_controller = new GameSessionController(clientMessageQueue, session_start_data);
         stateManager.detach(login_menu_controller);
         nifty.fromXml("Interface/Hud.xml", "hud", game_session_controller);
         stateManager.attach(game_session_controller);

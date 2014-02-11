@@ -26,7 +26,9 @@ import de.lessvoid.nifty.elements.Element;
 import de.lessvoid.nifty.elements.render.TextRenderer;
 import de.lessvoid.nifty.screen.Screen;
 import de.lessvoid.nifty.screen.ScreenController;
+import fr.gembasher.brumes.network.WorldState;
 import java.util.Calendar;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class GameSessionController extends AbstractAppState implements ScreenController {
 
@@ -43,11 +45,16 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
   private TerrainQuad terrain;
   private Material mat_terrain;
   
+  private long last_processed_world_state_timestamp = 0;
+  
   private AssetManager assetManager;
-    
-  public GameSessionController(SessionStartData session_start_data) {
-       player = new Player(100, 100);
-       player.setNom(session_start_data.player_char_name);
+  
+  private final ConcurrentLinkedQueue<WorldState> clientMessageQueue;
+  
+  public GameSessionController(ConcurrentLinkedQueue<WorldState> clientMessageQueue, SessionStartData session_start_data) {
+      this.clientMessageQueue = clientMessageQueue;
+      player = new Player(100, 100);
+      player.setNom(session_start_data.player_char_name);
   }
   
   public void bind(Nifty nifty, Screen screen) {
@@ -72,8 +79,8 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
     rootNode.detachAllChildren(); // On nettoie la scène graphique
     app.getFlyByCamera().setEnabled(true);
     
-    //Ajout skybox
-    //rootNode.attachChild(SkyFactory.createSky(assetManager, "Textures/Sky/BrightSky.dds", false));
+    //skybox
+    rootNode.attachChild(SkyFactory.createSky(assetManager, "Textures/Sky/BrightSky.dds", false));
     
     //terrain
     mettreEnPlaceTerrain();
@@ -91,7 +98,32 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
   @Override
   public void update(float delta) {
       app.getInputManager().setCursorVisible(false);
+      process_server_intputs();
+      update_positions();
       majHUD();
+  }
+  
+  private void process_server_intputs(){
+    WorldState world_state;
+    while ((world_state = clientMessageQueue.poll()) != null) {
+        if (world_state.timestamp > last_processed_world_state_timestamp) {
+            last_processed_world_state_timestamp = world_state.timestamp;
+            // calculer liste des entites affichées
+            // parcourir la liste des EntityUpdate
+                // Si un node existe avec le meme id que l'update
+                    // mettre a jour les infos
+                    //si la position actuelle de l'entiée est abherente par rapporte a celle du serveur
+                        // la position devient immediatement celle du serveur
+                    //finsi
+                //sinon
+                    // créer le node (demander info supplementaire serveur ? plus tard)
+                //finsi
+                // marquer les entites mises a jour
+            // fin parcours
+            // si des entitées affichées ne sont pas mentionnées dans le world state, masquer leur node
+        }
+        //dans tout les cas prendre en comptes les autres evenement
+    }
   }
   
   public void goMainMenu(){
@@ -179,12 +211,17 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
  
     /** 4. We give the terrain its material, position & scale it, and attach it. */
     terrain.setMaterial(mat_terrain);
-    terrain.setLocalTranslation(0, -100, 0);
-    terrain.setLocalScale(1f, 0.5f, 1f);
+    terrain.setLocalTranslation(0, -30, 0);
+    terrain.setLocalScale(1f, 0.1f, 1f);
     rootNode.attachChild(terrain);
  
     /** 5. The LOD (level of detail) depends on were the camera is: */
     TerrainLodControl control = new TerrainLodControl(terrain, app.getCamera());
     terrain.addControl(control);
   }
+
+    /* met a jour les positions des entitées en focntion de leur destination **/
+    private void update_positions() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }

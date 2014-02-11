@@ -17,11 +17,13 @@ public class NetworkListener extends Listener {
 	
         @Override
 	   public void received (Connection con, Object msg) {
-	    	  
-	   if ( msg instanceof LoggedAs ) {
-	    	  System.out.println("Connecté en tant que "+ (LoggedAs)msg);
+	   
+            if ( msg instanceof WorldState ) {
+                  clientMessageQueue.add((WorldState)msg);
+	      }
+	   
+           else if ( msg instanceof LoggedAs ) {
                   loginStateQueue.add((LoggedAs)msg);
-                  
 	      }
 	   }
 	   
