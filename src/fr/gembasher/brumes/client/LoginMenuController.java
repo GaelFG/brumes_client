@@ -16,8 +16,15 @@ import com.jme3.math.ColorRGBA;
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Node;
 import de.lessvoid.nifty.Nifty;
+import de.lessvoid.nifty.controls.TextField;
+import de.lessvoid.nifty.elements.Element;
+import de.lessvoid.nifty.elements.render.TextRenderer;
 import de.lessvoid.nifty.screen.Screen;
 import de.lessvoid.nifty.screen.ScreenController;
+import fr.gembasher.brumes.network.LoggedAs;
+import fr.gembasher.brumes.network.LoginRequest;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class LoginMenuController extends AbstractAppState implements ScreenController {
 
@@ -77,11 +84,33 @@ public class LoginMenuController extends AbstractAppState implements ScreenContr
       app.stop();
   }
   
-  public void goOptions() {
+  public void startSession() {
+      String login;
+      String password;
       
-  }
-  
-  public void startGame() {
-      app.goGame();
+      login = nifty.getCurrentScreen().findNiftyControl("loginField", TextField.class).getText();
+      password = nifty.getCurrentScreen().findNiftyControl("passwordField", TextField.class).getText();
+      
+      app.getClient().sendTCP(new LoginRequest(login, password));
+      boolean logged = false;
+      boolean rejected = false;
+      Object roger = null;
+      
+      int waited_time = 0;
+      
+      while(!logged && !rejected && waited_time < 2000) {
+          roger = app.getLoginStateQueue().poll();
+          if (roger !=  null) {
+            if (roger.getClass() == LoggedAs.class) {
+                SessionStartData session_start_data = new SessionStartData(((LoggedAs)roger).character_name);
+                System.out.println("logged !!!");
+                app.goGame(session_start_data);
+            }
+          }
+          waited_time += 10;
+          try {
+              Thread.sleep(10);
+          } catch (InterruptedException ex) {}
+      }
   }
 }

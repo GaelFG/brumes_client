@@ -39,13 +39,15 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
   private Calendar cal = Calendar.getInstance();
   
   //PLayerStat
-  private Player joueur;
+  private Player player;
   private TerrainQuad terrain;
   private Material mat_terrain;
   
   private AssetManager assetManager;
     
-  public GameSessionController() {
+  public GameSessionController(SessionStartData session_start_data) {
+       player = new Player(100, 100);
+       player.setNom(session_start_data.player_char_name);
   }
   
   public void bind(Nifty nifty, Screen screen) {
@@ -66,16 +68,12 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
     this.assetManager = app.getAssetManager();
     rootNode = this.app.getRootNode();
     
-    // crea instance joueur
-    joueur = new Player(100, 100);
-    
     //
     rootNode.detachAllChildren(); // On nettoie la scène graphique
     app.getFlyByCamera().setEnabled(true);
     
     //Ajout skybox
-    rootNode.attachChild(SkyFactory.createSky(
-            assetManager, "Textures/Sky/BrightSky.dds", false));
+    //rootNode.attachChild(SkyFactory.createSky(assetManager, "Textures/Sky/BrightSky.dds", false));
     
     //terrain
     mettreEnPlaceTerrain();
@@ -105,7 +103,7 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
   }
   
   public Player getPlayer() {
-      return joueur;
+      return player;
   }
   
   /**
@@ -113,19 +111,19 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
    */
   public void majHUD() {
     Element niftyElement = nifty.getCurrentScreen().findElementByName("nomperso");
-    niftyElement.getRenderer(TextRenderer.class).setText(joueur.getNom());
+    niftyElement.getRenderer(TextRenderer.class).setText(player.getNom());
     
     niftyElement = nifty.getCurrentScreen().findElementByName("killcounter");
-    niftyElement.getRenderer(TextRenderer.class).setText("Tués : "+joueur.getKillCounter());
+    niftyElement.getRenderer(TextRenderer.class).setText("Tués : "+player.getKillCounter());
     
     niftyElement = nifty.getCurrentScreen().findElementByName("horloge");
     niftyElement.getRenderer(TextRenderer.class).setText(cal.get(Calendar.HOUR_OF_DAY)+":"+cal.get(Calendar.MINUTE));
     
     niftyElement = nifty.getCurrentScreen().findElementByName("vie");
-    niftyElement.getRenderer(TextRenderer.class).setText(""+joueur.getHp());
+    niftyElement.getRenderer(TextRenderer.class).setText(""+player.getHp());
     
     niftyElement = nifty.getCurrentScreen().findElementByName("mana");
-    niftyElement.getRenderer(TextRenderer.class).setText(""+joueur.getMana());
+    niftyElement.getRenderer(TextRenderer.class).setText(""+player.getMana());
   }
   
   /**
@@ -182,7 +180,7 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
     /** 4. We give the terrain its material, position & scale it, and attach it. */
     terrain.setMaterial(mat_terrain);
     terrain.setLocalTranslation(0, -100, 0);
-    terrain.setLocalScale(2f, 1f, 2f);
+    terrain.setLocalScale(1f, 0.5f, 1f);
     rootNode.attachChild(terrain);
  
     /** 5. The LOD (level of detail) depends on were the camera is: */

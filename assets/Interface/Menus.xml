@@ -12,19 +12,19 @@
         
       <control font="aurulent-sans-16.fnt" id="titleLabel" name="label" text="Brumes" width="60%"/>
         
-      <panel childLayout="horizontal" id="passwordPanel" style="nifty-panel-simple" width="60%">
-        <control font="aurulent-sans-16.fnt" id="passwordLabel" name="label" text="Mot de passe :" width="20%" />
-        <control id="passwordField" name="textfield" width="80%" />
-      </panel>
-      
       <panel childLayout="horizontal" id="loginPannel" style="nifty-panel-simple" width="60%">
         <control font="aurulent-sans-16.fnt" id="loginLabel" name="label" text="Identifiant :" width="20%"/>
         <control id="loginField" name="textfield" width="80%"/>
       </panel>
       
+      <panel childLayout="horizontal" id="passwordPanel" style="nifty-panel-simple" width="60%">
+        <control font="aurulent-sans-16.fnt" id="passwordLabel" name="label" text="Mot de passe :" width="20%" />
+        <control id="passwordField" name="textfield" width="80%" />
+      </panel>
+      
       <panel childLayout="center" id="connectPannel" style="nifty-panel-simple" width="60%">
         <control childLayout="center"  id="connectButton" label="Se connecter" name="button" >
-             <interact onClick="startGame()" />
+             <interact onClick="startSession()" />
         </control>
       </panel>
     </layer>
