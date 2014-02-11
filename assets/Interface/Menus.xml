@@ -1,50 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<nifty xmlns="http://nifty-gui.sourceforge.net/nifty-1.3.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://nifty-gui.sourceforge.net/nifty-1.3.xsd http://nifty-gui.sourceforge.net/nifty-1.3.xsd">
-    <!-- +++++++++++++++++++++++++++++++++++++++ -->
-    <!-- Menu d'acceuil -->
-    <!-- +++++++++++++++++++++++++++++++++++++++ -->
-    <screen id="start" controller="fr.gembasher.burnzombies.gui.MenuController">
-        <layer id="fond" backgroundColor="#0000" childLayout="center"> 
-           <!-- <image filename="Interface/FondStartMenu.jpg"></image> -->
-        </layer>
-        <layer id="premierplan" backgroundColor="#0000" childLayout="center">
-            <panel id="conteneurcentre" height="90%" width="80%" align="center" valign="center" childLayout="vertical" >
-                <panel id="panelTitreJeu" height="25%" width="80%" align="center" backgroundColor="#0000" childLayout="center" visibleToMouse="false">
-                    <effect>
-                        <onStartScreen name="fade" start="#00" end="#ff" length="1200" startDelay="0" inherit="true"/>
-                        <!-- <onEndScreen name="fade" mode="out" direction="bottom" length="300" startDelay="0" inherit="true"/> -->
-                    </effect>
-                    <text id="txtTitreJeu" color="#0aaf" font="Interface/Fonts/Test2Big.fnt"  text="Burn, Zombies ! Burn !" align="center" valign="center" />
-                </panel>
-
-                <panel id="panelStart" height="20%" width="35%" align="center"  backgroundColor="#f600" childLayout="center" visibleToMouse="true">
-                    <interact onClick="startGame()"/>
-                    <effect>
-                        <onStartScreen name="move" mode="in" direction="top" length="300" startDelay="0" inherit="true"/>
-                        <onHover name="pulsate" scaleFactor="0.008" startColor="#0000" endColor="#063f" post="true"/> 
-                    </effect>
-                    <text id="txtStart" color="#0aaf" font="Interface/Fonts/Test2.fnt" text="Jouer" align="center" valign="center" />
-                </panel>
-
-                <panel id="panelOptions" height="20%" width="35%" align="center" backgroundColor="#f600" childLayout="center" visibleToMouse="true">
-                    <interact onClick="goOptions()"/>
-                    <effect>
-                        <onStartScreen name="move" mode="in" direction="top" length="300" startDelay="0" inherit="true"/>
-                        <onHover name="pulsate" scaleFactor="0.008" startColor="#000" endColor="#ffff" post="true"/>
-                    </effect>
-                    <text id="txtOptions" color="#0aaf" font="Interface/Fonts/Test2.fnt" text="Options" align="center" valign="center" />
-                </panel>
-                
-                <panel id="panelQuit" height="20%" width="35%" align="center" backgroundColor="#f600" childLayout="center" visibleToMouse="true">
-                    <interact onClick="quit()"/>
-                    <effect>
-                        <onStartScreen name="move" mode="in" direction="top" length="300" startDelay="0" inherit="true"/>
-                        <onHover name="pulsate" scaleFactor="0.008" startColor="#000" endColor="#ffff" post="true"/>
-                    </effect>
-                    <text id="txtQuit" color="#0aaf" font="Interface/Fonts/Test2.fnt" text="Exit" align="center" valign="center" />
-                </panel>
-                
-            </panel>   
-        </layer>
-    </screen>
+<nifty>
+  <useStyles filename="nifty-default-styles.xml"/>
+  <useControls filename="nifty-default-controls.xml"/>
+  
+  <!-- +++++++++++++++++++++++++++++++++++++++ -->
+  <!-- Login screen -->
+  <!-- +++++++++++++++++++++++++++++++++++++++ -->
+  <screen id="login" controller="fr.gembasher.brumes.client.LoginMenuController">
+    <layer childLayout="center" id="background"/>
+    <layer childLayout="vertical" id="foreground" height="100%">
+        
+      <control font="aurulent-sans-16.fnt" id="titleLabel" name="label" text="Brumes" width="60%"/>
+        
+      <panel childLayout="horizontal" id="passwordPanel" style="nifty-panel-simple" width="60%">
+        <control font="aurulent-sans-16.fnt" id="passwordLabel" name="label" text="Mot de passe :" width="20%" />
+        <control id="passwordField" name="textfield" width="80%" />
+      </panel>
+      
+      <panel childLayout="horizontal" id="loginPannel" style="nifty-panel-simple" width="60%">
+        <control font="aurulent-sans-16.fnt" id="loginLabel" name="label" text="Identifiant :" width="20%"/>
+        <control id="loginField" name="textfield" width="80%"/>
+      </panel>
+      
+      <panel childLayout="center" id="connectPannel" style="nifty-panel-simple" width="60%">
+        <control childLayout="center"  id="connectButton" label="Se connecter" name="button" >
+             <interact onClick="startGame()" />
+        </control>
+      </panel>
+    </layer>
+  </screen>
 </nifty>
+
+
+
+
