@@ -27,11 +27,13 @@ public class PlayerInputsListener implements AnalogListener, ActionListener{
     public void onAction(String binding, boolean isPressed, float tpf) {
     if (binding.equals("Left")) {
       boolean left = isPressed;
-      PlayerIntent player_intent = new PlayerIntent(12.0, 12.0, 15.0, 16.0);
+      PlayerIntent player_intent = new PlayerIntent(-12.0, 0.0, 15.0, 16.0);
       client.sendTCP(player_intent);
         System.out.println("envoi player intent");
     } else if (binding.equals("Right")) {
       boolean right= isPressed;
+      PlayerIntent player_intent = new PlayerIntent(12.0, 0.0, 15.0, 16.0);
+      client.sendTCP(player_intent);
     } else if (binding.equals("Up")) {
       boolean up = isPressed;
     } else if (binding.equals("Down")) {
