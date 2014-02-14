@@ -7,11 +7,11 @@ import fr.gembasher.brumes.network.WorldState;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class NetworkListener extends Listener {
-	protected ConcurrentLinkedQueue<WorldState> clientMessageQueue;
+	protected ConcurrentLinkedQueue<WorldState> world_states_queue;
         protected ConcurrentLinkedQueue<LoggedAs> loginStateQueue;
 	
 	public NetworkListener(ConcurrentLinkedQueue<WorldState> pClientMessageQueue, ConcurrentLinkedQueue<LoggedAs> pLoginStateQueue){
-		clientMessageQueue = pClientMessageQueue;
+		world_states_queue = pClientMessageQueue;
                 loginStateQueue = pLoginStateQueue;
 	}
 	
@@ -19,7 +19,7 @@ public class NetworkListener extends Listener {
 	   public void received (Connection con, Object msg) {
 	   
             if ( msg instanceof WorldState ) {
-                  clientMessageQueue.add((WorldState)msg);
+                  world_states_queue.add((WorldState)msg);
 	      }
 	   
            else if ( msg instanceof LoggedAs ) {

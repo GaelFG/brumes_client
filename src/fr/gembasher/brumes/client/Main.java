@@ -24,7 +24,7 @@ public class Main extends SimpleApplication {
     private Nifty nifty;
     
     private final Client client = new Client();
-    private final ConcurrentLinkedQueue<WorldState> clientMessageQueue = new ConcurrentLinkedQueue<WorldState>();
+    private final ConcurrentLinkedQueue<WorldState> world_states_queue = new ConcurrentLinkedQueue<WorldState>();
     private final ConcurrentLinkedQueue<LoggedAs> loginStateQueue = new ConcurrentLinkedQueue<LoggedAs>();
     
     
@@ -53,7 +53,7 @@ public class Main extends SimpleApplication {
 		return; // On quitte le client
             }
         /* Ajout du listener qui traite les inputs des joueurs */
-	client.addListener( new NetworkListener(clientMessageQueue, loginStateQueue) );
+	client.addListener( new NetworkListener(world_states_queue, loginStateQueue) );
  
                 
         goMenu();
@@ -77,7 +77,7 @@ public class Main extends SimpleApplication {
     }
     
     public void goGame( SessionStartData session_start_data ) {
-        game_session_controller = new GameSessionController(clientMessageQueue, session_start_data);
+        game_session_controller = new GameSessionController(world_states_queue, session_start_data);
         stateManager.detach(login_menu_controller);
         nifty.fromXml("Interface/Hud.xml", "hud", game_session_controller);
         stateManager.attach(game_session_controller);

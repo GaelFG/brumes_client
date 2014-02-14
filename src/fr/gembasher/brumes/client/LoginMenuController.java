@@ -17,14 +17,10 @@ import com.jme3.math.Vector3f;
 import com.jme3.scene.Node;
 import de.lessvoid.nifty.Nifty;
 import de.lessvoid.nifty.controls.TextField;
-import de.lessvoid.nifty.elements.Element;
-import de.lessvoid.nifty.elements.render.TextRenderer;
 import de.lessvoid.nifty.screen.Screen;
 import de.lessvoid.nifty.screen.ScreenController;
 import fr.gembasher.brumes.network.LoggedAs;
 import fr.gembasher.brumes.network.LoginRequest;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class LoginMenuController extends AbstractAppState implements ScreenController {
 

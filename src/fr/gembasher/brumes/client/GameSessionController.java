@@ -11,8 +11,10 @@ import com.jme3.app.state.AppStateManager;
 import com.jme3.asset.AssetManager;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
+import com.jme3.math.Vector3f;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
+import com.jme3.scene.Spatial;
 import com.jme3.scene.shape.Box;
 import com.jme3.terrain.geomipmap.TerrainLodControl;
 import com.jme3.terrain.geomipmap.TerrainQuad;
@@ -26,6 +28,7 @@ import de.lessvoid.nifty.elements.Element;
 import de.lessvoid.nifty.elements.render.TextRenderer;
 import de.lessvoid.nifty.screen.Screen;
 import de.lessvoid.nifty.screen.ScreenController;
+import fr.gembasher.brumes.network.EntityState;
 import fr.gembasher.brumes.network.WorldState;
 import java.util.Calendar;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -34,6 +37,8 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
 
   private Main app;
   private Node rootNode;
+  /** Contain all entities */
+  private Node entities_node;
   private AppStateManager stateManager;
   private Nifty nifty;
   private Screen screen;
@@ -49,10 +54,10 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
   
   private AssetManager assetManager;
   
-  private final ConcurrentLinkedQueue<WorldState> clientMessageQueue;
+  private final ConcurrentLinkedQueue<WorldState> world_states_queue;
   
   public GameSessionController(ConcurrentLinkedQueue<WorldState> clientMessageQueue, SessionStartData session_start_data) {
-      this.clientMessageQueue = clientMessageQueue;
+      this.world_states_queue = clientMessageQueue;
       player = new Player(100, 100);
       player.setNom(session_start_data.player_char_name);
   }
@@ -85,14 +90,10 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
     //terrain
     mettreEnPlaceTerrain();
     
-    Box b = new Box(1, 1, 1);
-    Geometry geom = new Geometry("Box", b);
+    // entities
+    entities_node = new Node("entities");
+    rootNode.attachChild(entities_node);
 
-    Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-    mat.setColor("Color", ColorRGBA.Blue);
-    geom.setMaterial(mat);
-    rootNode.attachChild(geom);
-        
   }
   
   @Override
@@ -103,11 +104,46 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
       majHUD();
   }
   
+  /** genere une entitée encore inexistante dans le graphe de la scène */
+  private Node create_entity_from_state(EntityState entity_state) {
+      Node node;
+      node = new Node("" + entity_state.id);
+      
+      // partie graphique a refaire plus tard
+      Box b = new Box(1, 1, 1);
+      Geometry geom = new Geometry("Box", b);
+      Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+      mat.setColor("Color", ColorRGBA.Red);
+      geom.setMaterial(mat);
+      node.attachChild(geom);
+      // fin ârtie graphique
+      
+      node.setLocalTranslation((float)(entity_state.x), (float)(entity_state.y), 0f);
+      node.setUserData("looked", new Vector3f((float)(entity_state.looked_x), (float)(entity_state.looked_y), 0f));
+      node.setUserData("destination", new Vector3f((float)(entity_state.destination_x), (float)(entity_state.destination_y), 0f));
+      node.lookAt((Vector3f)(node.getUserData("looked")), Vector3f.UNIT_Y);
+      return node;
+  }
+  
   private void process_server_intputs(){
     WorldState world_state;
-    while ((world_state = clientMessageQueue.poll()) != null) {
+    while ((world_state = world_states_queue.poll()) != null) {
         if (world_state.timestamp > last_processed_world_state_timestamp) {
             last_processed_world_state_timestamp = world_state.timestamp;
+            for (EntityState entity_state : world_state.entities_states) {
+                Spatial entity_node = entities_node.getChild(""+entity_state.id); //TODO cast necessaire ou pas ?
+                if (entity_node == null) {
+                    entity_node = create_entity_from_state(entity_state);
+                    entities_node.attachChild(entity_node);
+                } else {
+                    
+                    //TODO Si la position est trop désynchronisée, faire une teleportation
+                    //entity_node.setLocalTranslation((float)(entity_state.x), (float)(entity_state.y), 0f);
+                   
+                    entity_node.setUserData("looked", new Vector3f((float)(entity_state.looked_x), (float)(entity_state.looked_y), 0f));
+                    entity_node.setUserData("destination", new Vector3f((float)(entity_state.destination_x), (float)(entity_state.destination_y), 0f));
+                }
+            }
             // calculer liste des entites affichées
             // parcourir la liste des EntityUpdate
                 // Si un node existe avec le meme id que l'update
@@ -197,15 +233,6 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
             "Textures/Terrain/splat/map1_height.png");
     heightmap = new ImageBasedHeightMap(heightMapImage.getImage());
     heightmap.load();
- 
-    /** 3. We have prepared material and heightmap. 
-     * Now we create the actual terrain:
-     * 3.1) Create a TerrainQuad and name it "my terrain".
-     * 3.2) A good value for terrain tiles is 64x64 -- so we supply 64+1=65.
-     * 3.3) We prepared a heightmap of size 512x512 -- so we supply 512+1=513.
-     * 3.4) As LOD step scale we supply Vector3f(1,1,1).
-     * 3.5) We supply the prepared heightmap itself.
-     */
     int patchSize = 65;
     terrain = new TerrainQuad("my terrain", patchSize, 513, heightmap.getHeightMap());
  
@@ -222,6 +249,13 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
 
     /* met a jour les positions des entitées en focntion de leur destination **/
     private void update_positions() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        for (Spatial entity : entities_node.getChildren()) {
+            Vector3f destination = (Vector3f)(entity.getUserData("destination"));
+            Vector3f movement = destination.subtract(entity.getWorldTranslation()).normalize();
+            movement = movement.mult(0.2f); //TODO reguler vitesse
+            entity.move(movement);
+            // le regard
+            entity.lookAt((Vector3f)(entity.getUserData("looked")), Vector3f.UNIT_Y);
+        }
     }
 }
