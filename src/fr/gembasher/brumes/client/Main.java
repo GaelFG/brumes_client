@@ -3,6 +3,11 @@ package fr.gembasher.brumes.client;
 import com.esotericsoftware.kryonet.Client;
 import com.esotericsoftware.minlog.Log;
 import com.jme3.app.SimpleApplication;
+import com.jme3.input.KeyInput;
+import com.jme3.input.MouseInput;
+import com.jme3.input.controls.ActionListener;
+import com.jme3.input.controls.KeyTrigger;
+import com.jme3.input.controls.MouseButtonTrigger;
 import com.jme3.niftygui.NiftyJmeDisplay;
 import com.jme3.renderer.RenderManager;
 import de.lessvoid.nifty.Nifty;
@@ -55,7 +60,7 @@ public class Main extends SimpleApplication {
         /* Ajout du listener qui traite les inputs des joueurs */
 	client.addListener( new NetworkListener(world_states_queue, loginStateQueue) );
  
-                
+        setUpKeys();    
         goMenu();
     }
 
@@ -90,5 +95,21 @@ public class Main extends SimpleApplication {
     public ConcurrentLinkedQueue<LoggedAs> getLoginStateQueue() {
         return loginStateQueue;
     }
+    
+  
+public ActionListener player_input_listener = new PlayerInputsListener(client);
+    
+private void setUpKeys() {
+    inputManager.addMapping("Left", new KeyTrigger(KeyInput.KEY_A));
+    inputManager.addMapping("Right", new KeyTrigger(KeyInput.KEY_D));
+    inputManager.addMapping("Up", new KeyTrigger(KeyInput.KEY_W));
+    inputManager.addMapping("Down", new KeyTrigger(KeyInput.KEY_S));
+    inputManager.addMapping("Jump", new KeyTrigger(KeyInput.KEY_SPACE));
+    inputManager.addListener(player_input_listener, "Left");
+    inputManager.addListener(player_input_listener, "Right");
+    inputManager.addListener(player_input_listener, "Up");
+    inputManager.addListener(player_input_listener, "Down");
+    inputManager.addListener(player_input_listener, "Jump");
+}
     
 }

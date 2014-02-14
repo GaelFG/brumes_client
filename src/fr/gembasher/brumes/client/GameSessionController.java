@@ -118,9 +118,9 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
       node.attachChild(geom);
       // fin ârtie graphique
       
-      node.setLocalTranslation((float)(entity_state.x), (float)(entity_state.y), 0f);
-      node.setUserData("looked", new Vector3f((float)(entity_state.looked_x), (float)(entity_state.looked_y), 0f));
-      node.setUserData("destination", new Vector3f((float)(entity_state.destination_x), (float)(entity_state.destination_y), 0f));
+      node.setLocalTranslation((float)(entity_state.x), 0f, (float)(entity_state.y));
+      node.setUserData("looked", new Vector3f((float)(entity_state.looked_x), 0f, (float)(entity_state.looked_y)));
+      node.setUserData("destination", new Vector3f((float)(entity_state.destination_x), 0f, (float)(entity_state.destination_y)));
       node.lookAt((Vector3f)(node.getUserData("looked")), Vector3f.UNIT_Y);
       return node;
   }
@@ -140,8 +140,8 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
                     //TODO Si la position est trop désynchronisée, faire une teleportation
                     //entity_node.setLocalTranslation((float)(entity_state.x), (float)(entity_state.y), 0f);
                    
-                    entity_node.setUserData("looked", new Vector3f((float)(entity_state.looked_x), (float)(entity_state.looked_y), 0f));
-                    entity_node.setUserData("destination", new Vector3f((float)(entity_state.destination_x), (float)(entity_state.destination_y), 0f));
+                    entity_node.setUserData("looked", new Vector3f((float)(entity_state.looked_x), 0f, (float)(entity_state.looked_y)));
+                    entity_node.setUserData("destination", new Vector3f((float)(entity_state.destination_x), 0f, (float)(entity_state.destination_y)));
                 }
             }
             // calculer liste des entites affichées
@@ -250,10 +250,13 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
     /* met a jour les positions des entitées en focntion de leur destination **/
     private void update_positions() {
         for (Spatial entity : entities_node.getChildren()) {
+            float velocity = 0.1f;
             Vector3f destination = (Vector3f)(entity.getUserData("destination"));
+            if (entity.getWorldTranslation().distance(destination) > velocity) {
             Vector3f movement = destination.subtract(entity.getWorldTranslation()).normalize();
-            movement = movement.mult(0.2f); //TODO reguler vitesse
+            movement = movement.mult(velocity); //TODO reguler vitesse
             entity.move(movement);
+            }
             // le regard
             entity.lookAt((Vector3f)(entity.getUserData("looked")), Vector3f.UNIT_Y);
         }
