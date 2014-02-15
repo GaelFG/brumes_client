@@ -14,7 +14,7 @@
         
       <panel childLayout="horizontal" id="loginPannel" style="nifty-panel-simple" width="60%">
         <control font="aurulent-sans-16.fnt" id="loginLabel" name="label" text="Identifiant :" width="20%"/>
-        <control id="loginField" name="textfield" text="gael" width="80%"/>
+        <control id="loginField" name="textfield" text="" width="80%"/>
       </panel>
       
       <panel childLayout="horizontal" id="passwordPanel" style="nifty-panel-simple" width="60%">

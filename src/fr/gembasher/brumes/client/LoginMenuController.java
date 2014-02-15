@@ -32,7 +32,7 @@ public class LoginMenuController extends AbstractAppState implements ScreenContr
   private AssetManager assetManager;
   
   public LoginMenuController() {
-  
+      //TODO load login from file
   }
   
   public void bind(Nifty nifty, Screen screen) {
@@ -41,6 +41,7 @@ public class LoginMenuController extends AbstractAppState implements ScreenContr
   }
   
     public void onStartScreen() {
+        
   }
 
     public void onEndScreen() {
@@ -52,7 +53,13 @@ public class LoginMenuController extends AbstractAppState implements ScreenContr
     this.stateManager = stateManager;
     this.assetManager = app.getAssetManager();
     
+    String login_preset = Config.read_property("login");
+    if (login_preset != null) {
+        nifty.getCurrentScreen().findNiftyControl("loginField", TextField.class).setText(Config.read_property("login"));
+    }
+    
     app.getFlyByCamera().setEnabled(false);
+    app.getFlyByCamera().setMoveSpeed(100);
     rootNode = this.app.getRootNode();
     rootNode.detachAllChildren(); // On nettoie la scène graphique
     
@@ -90,16 +97,17 @@ public class LoginMenuController extends AbstractAppState implements ScreenContr
       app.getClient().sendTCP(new LoginRequest(login, password));
       boolean logged = false;
       boolean rejected = false;
-      Object roger = null;
+      Object server_response = null;
       
       int waited_time = 0;
       
       while(!logged && !rejected && waited_time < 2000) {
-          roger = app.getLoginStateQueue().poll();
-          if (roger !=  null) {
-            if (roger.getClass() == LoggedAs.class) {
-                SessionStartData session_start_data = new SessionStartData(((LoggedAs)roger).character_name);
+          server_response = app.getLoginStateQueue().poll();
+          if (server_response !=  null) {
+            if (server_response.getClass() == LoggedAs.class) {
+                SessionStartData session_start_data = new SessionStartData(((LoggedAs)server_response).character_name, ""+((LoggedAs)server_response).character_entity_id);
                 System.out.println("logged !!!");
+                Config.write_property("login", login);
                 app.goGame(session_start_data);
             }
           }

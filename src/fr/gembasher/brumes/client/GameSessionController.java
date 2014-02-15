@@ -1,10 +1,6 @@
 package fr.gembasher.brumes.client;
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
+import com.esotericsoftware.kryonet.Client;
 import com.jme3.app.Application;
 import com.jme3.app.state.AbstractAppState;
 import com.jme3.app.state.AppStateManager;
@@ -16,6 +12,7 @@ import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
 import com.jme3.scene.shape.Box;
+import com.jme3.scene.shape.Cylinder;
 import com.jme3.terrain.geomipmap.TerrainLodControl;
 import com.jme3.terrain.geomipmap.TerrainQuad;
 import com.jme3.terrain.heightmap.AbstractHeightMap;
@@ -28,6 +25,8 @@ import de.lessvoid.nifty.elements.Element;
 import de.lessvoid.nifty.elements.render.TextRenderer;
 import de.lessvoid.nifty.screen.Screen;
 import de.lessvoid.nifty.screen.ScreenController;
+import fr.gembasher.brumes.network.EntityDescription;
+import fr.gembasher.brumes.network.EntityDescriptionRequest;
 import fr.gembasher.brumes.network.EntityState;
 import fr.gembasher.brumes.network.WorldState;
 import java.util.Calendar;
@@ -35,6 +34,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class GameSessionController extends AbstractAppState implements ScreenController {
 
+  private Client client;
   private Main app;
   private Node rootNode;
   /** Contain all entities */
@@ -55,9 +55,12 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
   private AssetManager assetManager;
   
   private final ConcurrentLinkedQueue<WorldState> world_states_queue;
+  private final ConcurrentLinkedQueue<EntityDescription> entity_descriptions_queue;
   
-  public GameSessionController(ConcurrentLinkedQueue<WorldState> clientMessageQueue, SessionStartData session_start_data) {
+  public GameSessionController(Client client, ConcurrentLinkedQueue<WorldState> clientMessageQueue, ConcurrentLinkedQueue<EntityDescription> entity_descriptions_queue, SessionStartData session_start_data) {
+      this.client = client;
       this.world_states_queue = clientMessageQueue;
+      this.entity_descriptions_queue = entity_descriptions_queue;
       player = new Player(100, 100);
       player.setNom(session_start_data.player_char_name);
   }
@@ -86,8 +89,7 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
     
     //skybox
     rootNode.attachChild(SkyFactory.createSky(assetManager, "Textures/Sky/BrightSky.dds", false));
-    
-    //terrain
+
     mettreEnPlaceTerrain();
     
     // entities
@@ -104,14 +106,39 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
       majHUD();
   }
   
+  private void redefine_entity_from_description(Node redefined_node, EntityDescription description) {
+      redefined_node.setUserData("display_name", description.display_name);
+      redefined_node.detachChildNamed("Model");
+      
+      //TODO recuperer un modele en fonction du nom du modele
+      
+      Box cyl = new Box(0.5f, 1f, 0.5f);
+      Geometry geom = new Geometry("Model", cyl);
+      Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+      switch(description.model_parameters) {
+          case "color=red":
+              mat.setColor("Color", ColorRGBA.Red); break;
+          case "color=blue":
+              mat.setColor("Color", ColorRGBA.Yellow); break;
+          case "color=yellow":
+              mat.setColor("Color", ColorRGBA.Blue); break;
+          default:
+              mat.setColor("Color", ColorRGBA.Green);
+      }
+      
+      geom.setMaterial(mat);
+      redefined_node.attachChild(geom);
+      
+  }
+  
   /** genere une entitée encore inexistante dans le graphe de la scène */
   private Node create_entity_from_state(EntityState entity_state) {
       Node node;
       node = new Node("" + entity_state.id);
       
       // partie graphique a refaire plus tard
-      Box b = new Box(1, 1, 1);
-      Geometry geom = new Geometry("Box", b);
+      Box b = new Box(0.1f, 0.1f, 0.1f);
+      Geometry geom = new Geometry("Model", b);
       Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
       mat.setColor("Color", ColorRGBA.Red);
       geom.setMaterial(mat);
@@ -125,14 +152,24 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
       return node;
   }
   
+  //TODO gerer arrivée des events, gerer desynchronisation des positions des modeles
   private void process_server_intputs(){
     WorldState world_state;
+    EntityDescription entity_description;
+    
+    while ((entity_description = entity_descriptions_queue.poll()) != null) {
+        Spatial entity_node = entities_node.getChild(""+entity_description.id);
+        redefine_entity_from_description((Node)entity_node, entity_description);
+        
+    }
+    
     while ((world_state = world_states_queue.poll()) != null) {
         if (world_state.timestamp > last_processed_world_state_timestamp) {
             last_processed_world_state_timestamp = world_state.timestamp;
             for (EntityState entity_state : world_state.entities_states) {
                 Spatial entity_node = entities_node.getChild(""+entity_state.id); //TODO cast necessaire ou pas ?
                 if (entity_node == null) {
+                    client.sendTCP(new EntityDescriptionRequest(entity_state.id));
                     entity_node = create_entity_from_state(entity_state);
                     entities_node.attachChild(entity_node);
                 } else {
@@ -144,21 +181,7 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
                     entity_node.setUserData("destination", new Vector3f((float)(entity_state.destination_x), 0f, (float)(entity_state.destination_y)));
                 }
             }
-            // calculer liste des entites affichées
-            // parcourir la liste des EntityUpdate
-                // Si un node existe avec le meme id que l'update
-                    // mettre a jour les infos
-                    //si la position actuelle de l'entiée est abherente par rapporte a celle du serveur
-                        // la position devient immediatement celle du serveur
-                    //finsi
-                //sinon
-                    // créer le node (demander info supplementaire serveur ? plus tard)
-                //finsi
-                // marquer les entites mises a jour
-            // fin parcours
-            // si des entitées affichées ne sont pas mentionnées dans le world state, masquer leur node
         }
-        //dans tout les cas prendre en comptes les autres evenement
     }
   }
   
@@ -238,8 +261,8 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
  
     /** 4. We give the terrain its material, position & scale it, and attach it. */
     terrain.setMaterial(mat_terrain);
-    terrain.setLocalTranslation(0, -30, 0);
-    terrain.setLocalScale(1f, 0.1f, 1f);
+    terrain.setLocalTranslation(0, -4, 0);
+    terrain.setLocalScale(1f, 0.025f, 1f);
     rootNode.attachChild(terrain);
  
     /** 5. The LOD (level of detail) depends on were the camera is: */

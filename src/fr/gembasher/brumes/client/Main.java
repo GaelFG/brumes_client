@@ -11,6 +11,7 @@ import com.jme3.input.controls.MouseButtonTrigger;
 import com.jme3.niftygui.NiftyJmeDisplay;
 import com.jme3.renderer.RenderManager;
 import de.lessvoid.nifty.Nifty;
+import fr.gembasher.brumes.network.EntityDescription;
 import fr.gembasher.brumes.network.KryoRegisterer;
 import fr.gembasher.brumes.network.LoggedAs;
 import fr.gembasher.brumes.network.WorldState;
@@ -31,6 +32,7 @@ public class Main extends SimpleApplication {
     private final Client client = new Client();
     private final ConcurrentLinkedQueue<WorldState> world_states_queue = new ConcurrentLinkedQueue<WorldState>();
     private final ConcurrentLinkedQueue<LoggedAs> loginStateQueue = new ConcurrentLinkedQueue<LoggedAs>();
+    private final ConcurrentLinkedQueue<EntityDescription> entity_descriptions_queue = new ConcurrentLinkedQueue<EntityDescription>();
     
     
     public static void main(String[] args) {
@@ -58,7 +60,7 @@ public class Main extends SimpleApplication {
 		return; // On quitte le client
             }
         /* Ajout du listener qui traite les inputs des joueurs */
-	client.addListener( new NetworkListener(world_states_queue, loginStateQueue) );
+	client.addListener( new NetworkListener(world_states_queue, loginStateQueue, entity_descriptions_queue) );
  
         setUpKeys();    
         goMenu();
@@ -82,7 +84,7 @@ public class Main extends SimpleApplication {
     }
     
     public void goGame( SessionStartData session_start_data ) {
-        game_session_controller = new GameSessionController(world_states_queue, session_start_data);
+        game_session_controller = new GameSessionController(client, world_states_queue, entity_descriptions_queue, session_start_data);
         stateManager.detach(login_menu_controller);
         nifty.fromXml("Interface/Hud.xml", "hud", game_session_controller);
         stateManager.attach(game_session_controller);
