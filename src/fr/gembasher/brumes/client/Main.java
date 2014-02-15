@@ -5,14 +5,10 @@ import com.esotericsoftware.minlog.Log;
 import com.jme3.app.SimpleApplication;
 import com.jme3.bullet.BulletAppState;
 import com.jme3.input.InputManager;
-import com.jme3.input.KeyInput;
-import com.jme3.input.MouseInput;
-import com.jme3.input.controls.ActionListener;
-import com.jme3.input.controls.KeyTrigger;
-import com.jme3.input.controls.MouseButtonTrigger;
 import com.jme3.niftygui.NiftyJmeDisplay;
 import com.jme3.renderer.Camera;
 import com.jme3.renderer.RenderManager;
+import com.jme3.system.AppSettings;
 import de.lessvoid.nifty.Nifty;
 import fr.gembasher.brumes.network.EntityDescription;
 import fr.gembasher.brumes.network.KryoRegisterer;
@@ -34,13 +30,19 @@ public class Main extends SimpleApplication {
     private Nifty nifty;
     
     private final Client client = new Client();
-    private final ConcurrentLinkedQueue<WorldState> world_states_queue = new ConcurrentLinkedQueue<WorldState>();
-    private final ConcurrentLinkedQueue<LoggedAs> loginStateQueue = new ConcurrentLinkedQueue<LoggedAs>();
-    private final ConcurrentLinkedQueue<EntityDescription> entity_descriptions_queue = new ConcurrentLinkedQueue<EntityDescription>();
+    private final ConcurrentLinkedQueue<WorldState> world_states_queue = new ConcurrentLinkedQueue();
+    private final ConcurrentLinkedQueue<LoggedAs> loginStateQueue = new ConcurrentLinkedQueue();
+    private final ConcurrentLinkedQueue<EntityDescription> entity_descriptions_queue = new ConcurrentLinkedQueue();
     
     
     public static void main(String[] args) {
-        Main app = new Main();
+        Main app;
+        
+        app = new Main();
+        AppSettings newSetting = new AppSettings(true);
+        newSetting.setFrameRate(60);
+        newSetting.setSettingsDialogImage("Interface/splash_temp.jpg");
+        app.setSettings(newSetting);
         app.start();
     }
 

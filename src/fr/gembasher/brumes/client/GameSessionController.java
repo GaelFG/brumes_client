@@ -192,7 +192,7 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
       
       //controls
       ServerUpdatedControl server_updated_control;
-      server_updated_control = new ServerUpdatedControl(1f);
+      server_updated_control = new ServerUpdatedControl(16f);//TODO ajuster vitesse
       node.addControl(server_updated_control);
       
       return node;
@@ -221,7 +221,9 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
                         entities_node.attachChild(entity_node);
                     } else {
                         //TODO Si la position est trop désynchronisée, faire une teleportation
-                        //entity_node.setLocalTranslation((float)(entity_state.x), (float)(entity_state.y), 0f);
+                        if (entity_node.getLocalTranslation().distance(new Vector3f((float)(entity_state.x), 0f,(float)(entity_state.y))) > 8f) {
+                            entity_node.setLocalTranslation((float)(entity_state.x), 0f, (float)(entity_state.y));
+                        }
                         entity_node.setUserData("looked", new Vector3f((float)(entity_state.looked_x), 0f, (float)(entity_state.looked_y)));
                         entity_node.setUserData("destination", new Vector3f((float)(entity_state.destination_x), 0f, (float)(entity_state.destination_y)));
                     }
@@ -232,19 +234,27 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
   }
 
   public void majHUD() {
+      Node targeted_node = null;
       
       // determine le nom de notre cible actuelle 
-      /*
       CollisionResults results = new CollisionResults();
-      Ray ray = new Ray(cam.getLocation(), cam.getDirection());
+      Ray ray = new Ray(app.getCam().getLocation(), app.getCam().getDirection());
       entities_node.collideWith(ray, results);
-      */
+      
+      // on prends le premier objet rencontré
+      if (results.getClosestCollision() != null) {
+        targeted_node = results.getClosestCollision().getGeometry().getParent();
+      }
       
     Element niftyElement = nifty.getCurrentScreen().findElementByName("nomperso");
     niftyElement.getRenderer(TextRenderer.class).setText(player.getNom());
     
     niftyElement = nifty.getCurrentScreen().findElementByName("killcounter");
-    niftyElement.getRenderer(TextRenderer.class).setText("Tués : "+player.getKillCounter());
+    if (targeted_node != null) {
+        niftyElement.getRenderer(TextRenderer.class).setText(targeted_node.getUserData("display_name").toString());
+    } else {
+        niftyElement.getRenderer(TextRenderer.class).setText("");
+    }
     
     niftyElement = nifty.getCurrentScreen().findElementByName("horloge");
     niftyElement.getRenderer(TextRenderer.class).setText(cal.get(Calendar.HOUR_OF_DAY)+":"+cal.get(Calendar.MINUTE));
