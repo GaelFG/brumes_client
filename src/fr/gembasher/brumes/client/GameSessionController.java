@@ -5,8 +5,10 @@ import com.jme3.app.Application;
 import com.jme3.app.state.AbstractAppState;
 import com.jme3.app.state.AppStateManager;
 import com.jme3.asset.AssetManager;
+import com.jme3.collision.CollisionResults;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
+import com.jme3.math.Ray;
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
@@ -166,6 +168,15 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
   }
 
   public void majHUD() {
+      
+      // determine le nom de notre cible actuelle 
+      /*
+      CollisionResults results = new CollisionResults();
+      Ray ray = new Ray(cam.getLocation(), cam.getDirection());
+      entities_node.collideWith(ray, results);
+      
+      */
+      
     Element niftyElement = nifty.getCurrentScreen().findElementByName("nomperso");
     niftyElement.getRenderer(TextRenderer.class).setText(player.getNom());
     
@@ -216,7 +227,7 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
     mat_terrain.setFloat("Tex3Scale", 128f);
  
     /** 2. Create the height map */
-    AbstractHeightMap heightmap = null;
+    AbstractHeightMap heightmap;
     Texture heightMapImage = assetManager.loadTexture(
             "Textures/Terrain/splat/map1_height.png");
     heightmap = new ImageBasedHeightMap(heightMapImage.getImage());
