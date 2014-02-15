@@ -35,15 +35,18 @@ public class LoginMenuController extends AbstractAppState implements ScreenContr
       //TODO load login from file
   }
   
+  @Override
   public void bind(Nifty nifty, Screen screen) {
         this.nifty = nifty;
         this.screen = screen;
   }
   
+  @Override
     public void onStartScreen() {
         
   }
 
+  @Override
     public void onEndScreen() {
   }
     
@@ -87,6 +90,7 @@ public class LoginMenuController extends AbstractAppState implements ScreenContr
       app.stop();
   }
   
+  @SuppressWarnings("SleepWhileInLoop")
   public void startSession() {
       String login;
       String password;
@@ -97,7 +101,7 @@ public class LoginMenuController extends AbstractAppState implements ScreenContr
       app.getClient().sendTCP(new LoginRequest(login, password));
       boolean logged = false;
       boolean rejected = false;
-      Object server_response = null;
+      Object server_response;
       
       int waited_time = 0;
       
@@ -105,7 +109,7 @@ public class LoginMenuController extends AbstractAppState implements ScreenContr
           server_response = app.getLoginStateQueue().poll();
           if (server_response !=  null) {
             if (server_response.getClass() == LoggedAs.class) {
-                SessionStartData session_start_data = new SessionStartData(((LoggedAs)server_response).character_name, ""+((LoggedAs)server_response).character_entity_id);
+                SessionStartData session_start_data = new SessionStartData(((LoggedAs)server_response).character_name, ((LoggedAs)server_response).character_entity_id);
                 System.out.println("logged !!!");
                 Config.write_property("login", login);
                 app.goGame(session_start_data);

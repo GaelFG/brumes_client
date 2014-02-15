@@ -32,27 +32,19 @@ import java.util.Calendar;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class GameSessionController extends AbstractAppState implements ScreenController {
-
   private Client client;
   private Main app;
   private Node rootNode;
-  /** Contain all entities */
   private Node entities_node;
   private AppStateManager stateManager;
   private Nifty nifty;
   private Screen screen;
-  
-  private Calendar cal = Calendar.getInstance();
-  
-  //PLayerStat
+  private Calendar cal;
   private Player player;
   private TerrainQuad terrain;
   private Material mat_terrain;
-  
-  private long last_processed_world_state_timestamp = 0;
-  
+  private long last_processed_world_state_timestamp;
   private AssetManager assetManager;
-  
   private final ConcurrentLinkedQueue<WorldState> world_states_queue;
   private final ConcurrentLinkedQueue<EntityDescription> entity_descriptions_queue;
   
@@ -60,22 +52,11 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
       this.client = client;
       this.world_states_queue = clientMessageQueue;
       this.entity_descriptions_queue = entity_descriptions_queue;
+      cal = Calendar.getInstance();
+      last_processed_world_state_timestamp = 0;
       player = new Player(100, 100);
       player.setNom(session_start_data.player_char_name);
-  }
-  
-  @Override
-  public void bind(Nifty nifty, Screen screen) {
-        this.nifty = nifty;
-        this.screen = screen;
-  }
-  
-  @Override
-    public void onStartScreen() {
-  }
-
-  @Override
-    public void onEndScreen() {
+      player.entity_id = session_start_data.player_entity_id;
   }
     
   @Override
@@ -84,27 +65,19 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
     this.stateManager = stateManager;
     this.assetManager = app.getAssetManager();
     rootNode = this.app.getRootNode();
-    
-    //
     rootNode.detachAllChildren(); // On nettoie la scène graphique
     app.getFlyByCamera().setEnabled(true);
-    
     //skybox
     rootNode.attachChild(SkyFactory.createSky(assetManager, "Textures/Sky/BrightSky.dds", false));
-
     mettreEnPlaceTerrain();
-    
-    // entities
     entities_node = new Node("entities");
     rootNode.attachChild(entities_node);
-
   }
   
   @Override
   public void update(float delta) {
       app.getInputManager().setCursorVisible(false);
       process_server_intputs();
-      //update_positions();
       majHUD();
   }
   
@@ -113,7 +86,6 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
       redefined_node.detachChildNamed("Model");
       
       //TODO recuperer un modele en fonction du nom du modele
-      
       Box cyl = new Box(0.5f, 1f, 0.5f);
       Geometry geom = new Geometry("Model", cyl);
       Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
@@ -152,8 +124,9 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
       node.setUserData("destination", new Vector3f((float)(entity_state.destination_x), 0f, (float)(entity_state.destination_y)));
       node.lookAt((Vector3f)(node.getUserData("looked")), Vector3f.UNIT_Y);
       
-      //test controls
-      ServerUpdatedControl server_updated_control = new ServerUpdatedControl();
+      //controls
+      ServerUpdatedControl server_updated_control;
+      server_updated_control = new ServerUpdatedControl(1f);
       node.addControl(server_updated_control);
       
       return node;
@@ -174,39 +147,24 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
         if (world_state.timestamp > last_processed_world_state_timestamp) {
             last_processed_world_state_timestamp = world_state.timestamp;
             for (EntityState entity_state : world_state.entities_states) {
-                Spatial entity_node = entities_node.getChild(""+entity_state.id); //TODO cast necessaire ou pas ?
-                if (entity_node == null) {
-                    client.sendTCP(new EntityDescriptionRequest(entity_state.id));
-                    entity_node = create_entity_from_state(entity_state);
-                    entities_node.attachChild(entity_node);
-                } else {
-                    
-                    //TODO Si la position est trop désynchronisée, faire une teleportation
-                    //entity_node.setLocalTranslation((float)(entity_state.x), (float)(entity_state.y), 0f);
-                   
-                    entity_node.setUserData("looked", new Vector3f((float)(entity_state.looked_x), 0f, (float)(entity_state.looked_y)));
-                    entity_node.setUserData("destination", new Vector3f((float)(entity_state.destination_x), 0f, (float)(entity_state.destination_y)));
+                if (entity_state.id != player.entity_id) {
+                    Spatial entity_node = entities_node.getChild(""+entity_state.id); //TODO cast necessaire ou pas ?
+                    if (entity_node == null) {
+                        client.sendTCP(new EntityDescriptionRequest(entity_state.id));
+                        entity_node = create_entity_from_state(entity_state);
+                        entities_node.attachChild(entity_node);
+                    } else {
+                        //TODO Si la position est trop désynchronisée, faire une teleportation
+                        //entity_node.setLocalTranslation((float)(entity_state.x), (float)(entity_state.y), 0f);
+                        entity_node.setUserData("looked", new Vector3f((float)(entity_state.looked_x), 0f, (float)(entity_state.looked_y)));
+                        entity_node.setUserData("destination", new Vector3f((float)(entity_state.destination_x), 0f, (float)(entity_state.destination_y)));
+                    }
                 }
             }
         }
     }
   }
-  
-  public void goMainMenu(){
-      
-  }
-  
-  public void goOptions() {
-      
-  }
-  
-  public Player getPlayer() {
-      return player;
-  }
-  
-  /**
-   * Met à jour les variables du hud
-   */
+
   public void majHUD() {
     Element niftyElement = nifty.getCurrentScreen().findElementByName("nomperso");
     niftyElement.getRenderer(TextRenderer.class).setText(player.getNom());
@@ -276,19 +234,22 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
     TerrainLodControl control = new TerrainLodControl(terrain, app.getCamera());
     terrain.addControl(control);
   }
+  
+  public Player getPlayer() {
+      return player;
+  }
+  
+  @Override
+  public void bind(Nifty nifty, Screen screen) {
+        this.nifty = nifty;
+        this.screen = screen;
+  }
+  
+  @Override
+    public void onStartScreen() {
+  }
 
-    /* met a jour les positions des entitées en focntion de leur destination **/
-    private void update_positions() {
-        for (Spatial entity : entities_node.getChildren()) {
-            float velocity = 0.1f;
-            Vector3f destination = (Vector3f)(entity.getUserData("destination"));
-            if (entity.getWorldTranslation().distance(destination) > velocity) {
-            Vector3f movement = destination.subtract(entity.getWorldTranslation()).normalize();
-            movement = movement.mult(velocity); //TODO reguler vitesse
-            entity.move(movement);
-            }
-            // le regard
-            entity.lookAt((Vector3f)(entity.getUserData("looked")), Vector3f.UNIT_Y);
-        }
-    }
+  @Override
+    public void onEndScreen() {
+  }
 }

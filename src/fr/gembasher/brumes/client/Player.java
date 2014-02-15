@@ -16,6 +16,7 @@ public class Player {
     private double mana;
     private int killCounter;
     private String nom;
+    public int entity_id;
     
     /**
      * 
