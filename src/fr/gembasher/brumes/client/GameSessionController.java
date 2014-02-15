@@ -12,7 +12,6 @@ import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
 import com.jme3.scene.shape.Box;
-import com.jme3.scene.shape.Cylinder;
 import com.jme3.terrain.geomipmap.TerrainLodControl;
 import com.jme3.terrain.geomipmap.TerrainQuad;
 import com.jme3.terrain.heightmap.AbstractHeightMap;
@@ -65,14 +64,17 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
       player.setNom(session_start_data.player_char_name);
   }
   
+  @Override
   public void bind(Nifty nifty, Screen screen) {
         this.nifty = nifty;
         this.screen = screen;
   }
   
+  @Override
     public void onStartScreen() {
   }
 
+  @Override
     public void onEndScreen() {
   }
     
@@ -102,7 +104,7 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
   public void update(float delta) {
       app.getInputManager().setCursorVisible(false);
       process_server_intputs();
-      update_positions();
+      //update_positions();
       majHUD();
   }
   
@@ -149,6 +151,11 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
       node.setUserData("looked", new Vector3f((float)(entity_state.looked_x), 0f, (float)(entity_state.looked_y)));
       node.setUserData("destination", new Vector3f((float)(entity_state.destination_x), 0f, (float)(entity_state.destination_y)));
       node.lookAt((Vector3f)(node.getUserData("looked")), Vector3f.UNIT_Y);
+      
+      //test controls
+      ServerUpdatedControl server_updated_control = new ServerUpdatedControl();
+      node.addControl(server_updated_control);
+      
       return node;
   }
   
