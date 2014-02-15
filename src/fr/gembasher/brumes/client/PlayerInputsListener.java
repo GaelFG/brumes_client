@@ -7,7 +7,6 @@ package fr.gembasher.brumes.client;
 import com.esotericsoftware.kryonet.Client;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.AnalogListener;
-import fr.gembasher.brumes.network.PlayerIntent;
 
 /**
  *
@@ -15,31 +14,36 @@ import fr.gembasher.brumes.network.PlayerIntent;
  */
 public class PlayerInputsListener implements AnalogListener, ActionListener{
     private Client client;
+    private Player player;
     
-    public PlayerInputsListener(Client client) {
+    public PlayerInputsListener(Client client, Player player) {
         this.client = client;
+        this.player = player;
     }
     
+    @Override
     public void onAnalog(String name, float value, float tpf) {
 
     }
 
+    @Override
     public void onAction(String binding, boolean isPressed, float tpf) {
-    if (binding.equals("Left")) {
-      boolean left = isPressed;
-      PlayerIntent player_intent = new PlayerIntent(-12.0, 0.0, 15.0, 16.0);
-      client.sendTCP(player_intent);
-    } else if (binding.equals("Right")) {
-      boolean right= isPressed;
-      PlayerIntent player_intent = new PlayerIntent(12.0, 0.0, 15.0, 16.0);
-      client.sendTCP(player_intent);
-    } else if (binding.equals("Up")) {
-      boolean up = isPressed;
-    } else if (binding.equals("Down")) {
-      boolean down = isPressed;
-    } else if (binding.equals("Jump")) {
-      //if (isPressed) { player.jump(); }
-    }
+        switch (binding) {
+            case "Left":
+                 player.left = isPressed;
+                 break;
+            case "Right":
+                player.right= isPressed;
+                break;
+            case "Up":
+                player.up = isPressed;
+                break;
+            case "Down":
+                player.down = isPressed;
+                break;
+            case "Jump":
+                break;
+        }
   }
     
 }

@@ -3,12 +3,15 @@ package fr.gembasher.brumes.client;
 import com.esotericsoftware.kryonet.Client;
 import com.esotericsoftware.minlog.Log;
 import com.jme3.app.SimpleApplication;
+import com.jme3.bullet.BulletAppState;
+import com.jme3.input.InputManager;
 import com.jme3.input.KeyInput;
 import com.jme3.input.MouseInput;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.KeyTrigger;
 import com.jme3.input.controls.MouseButtonTrigger;
 import com.jme3.niftygui.NiftyJmeDisplay;
+import com.jme3.renderer.Camera;
 import com.jme3.renderer.RenderManager;
 import de.lessvoid.nifty.Nifty;
 import fr.gembasher.brumes.network.EntityDescription;
@@ -27,6 +30,7 @@ public class Main extends SimpleApplication {
 
     private LoginMenuController login_menu_controller;
     private GameSessionController game_session_controller;
+    private BulletAppState bulletAppState = new BulletAppState();
     private Nifty nifty;
     
     private final Client client = new Client();
@@ -62,7 +66,7 @@ public class Main extends SimpleApplication {
         /* Ajout du listener qui traite les inputs des joueurs */
 	client.addListener( new NetworkListener(world_states_queue, loginStateQueue, entity_descriptions_queue) );
  
-        setUpKeys();    
+            
         goMenu();
     }
 
@@ -76,8 +80,14 @@ public class Main extends SimpleApplication {
         //TODO: add render code
     }
     
+    @Override
+    public InputManager getInputManager() {
+        return inputManager;
+    }
+    
     public void goMenu() {
         stateManager.detach(game_session_controller);
+        stateManager.detach(bulletAppState);
         nifty.fromXml("Interface/Menus.xml", "login", login_menu_controller);
         game_session_controller = null;
         stateManager.attach(login_menu_controller);    
@@ -87,7 +97,9 @@ public class Main extends SimpleApplication {
         game_session_controller = new GameSessionController(client, world_states_queue, entity_descriptions_queue, session_start_data);
         stateManager.detach(login_menu_controller);
         nifty.fromXml("Interface/Hud.xml", "hud", game_session_controller);
+        stateManager.attach(bulletAppState);
         stateManager.attach(game_session_controller);
+        
     }
     
     public Client getClient() {
@@ -97,21 +109,13 @@ public class Main extends SimpleApplication {
     public ConcurrentLinkedQueue<LoggedAs> getLoginStateQueue() {
         return loginStateQueue;
     }
-    
-  
-public ActionListener player_input_listener = new PlayerInputsListener(client);
-    
-private void setUpKeys() {
-    inputManager.addMapping("Left", new KeyTrigger(KeyInput.KEY_A));
-    inputManager.addMapping("Right", new KeyTrigger(KeyInput.KEY_D));
-    inputManager.addMapping("Up", new KeyTrigger(KeyInput.KEY_W));
-    inputManager.addMapping("Down", new KeyTrigger(KeyInput.KEY_S));
-    inputManager.addMapping("Jump", new KeyTrigger(KeyInput.KEY_SPACE));
-    inputManager.addListener(player_input_listener, "Left");
-    inputManager.addListener(player_input_listener, "Right");
-    inputManager.addListener(player_input_listener, "Up");
-    inputManager.addListener(player_input_listener, "Down");
-    inputManager.addListener(player_input_listener, "Jump");
+
+public BulletAppState getBulletAppState() {
+    return bulletAppState;
 }
-    
+
+public Camera getCam() {
+    return cam;
+}
+
 }

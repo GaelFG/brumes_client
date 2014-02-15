@@ -18,6 +18,8 @@ public class Player {
     private String nom;
     public int entity_id;
     
+    public boolean left, right, up, down;
+    
     /**
      * 
      * @param pHpMax

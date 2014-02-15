@@ -5,7 +5,13 @@ import com.jme3.app.Application;
 import com.jme3.app.state.AbstractAppState;
 import com.jme3.app.state.AppStateManager;
 import com.jme3.asset.AssetManager;
+import com.jme3.bullet.collision.shapes.CapsuleCollisionShape;
+import com.jme3.bullet.control.CharacterControl;
+import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.collision.CollisionResults;
+import com.jme3.input.KeyInput;
+import com.jme3.input.controls.ActionListener;
+import com.jme3.input.controls.KeyTrigger;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.Ray;
@@ -29,6 +35,7 @@ import de.lessvoid.nifty.screen.ScreenController;
 import fr.gembasher.brumes.network.EntityDescription;
 import fr.gembasher.brumes.network.EntityDescriptionRequest;
 import fr.gembasher.brumes.network.EntityState;
+import fr.gembasher.brumes.network.PlayerIntent;
 import fr.gembasher.brumes.network.WorldState;
 import java.util.Calendar;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -42,6 +49,15 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
   private Nifty nifty;
   private Screen screen;
   private Calendar cal;
+  
+  public ActionListener player_input_listener;
+  
+  // test collison
+  private CharacterControl control_of_player;
+  private Vector3f walkDirection = new Vector3f();
+  private RigidBodyControl landscape;
+  //
+  
   private Player player;
   private TerrainQuad terrain;
   private Material mat_terrain;
@@ -74,6 +90,35 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
     mettreEnPlaceTerrain();
     entities_node = new Node("entities");
     rootNode.attachChild(entities_node);
+    player_input_listener = new PlayerInputsListener(client, player);
+    /////////////////////////////////////////
+    ////////////////////////////////////////
+    
+     /** 6. Add physics: */ 
+    // We set up collision detection for the scene by creating a static 
+    //RigidBodyControl with mass zero.*/
+    terrain.addControl(new RigidBodyControl(0));
+ 
+    // We set up collision detection for the player by creating
+    // a capsule collision shape and a CharacterControl.
+    // The CharacterControl offers extra settings for
+    // size, stepheight, jumping, falling, and gravity.
+    // We also put the player in its starting position.
+    CapsuleCollisionShape capsuleShape = new CapsuleCollisionShape(1.5f, 6f, 1);
+    control_of_player = new CharacterControl(capsuleShape, 0.05f);
+    control_of_player.setJumpSpeed(20);
+    control_of_player.setFallSpeed(30);
+    control_of_player.setGravity(30);
+    control_of_player.setPhysicsLocation(new Vector3f(-10, 10, 10));
+ 
+    // We attach the scene and the player to the rootnode and the physics space,
+    // to make them appear in the game world.
+    app.getBulletAppState().getPhysicsSpace().add(terrain);
+    app.getBulletAppState().getPhysicsSpace().add(control_of_player);
+    
+    ///////////////////////////////////////////
+    /////////////////////////////////////////////
+    setUpKeys();
   }
   
   @Override
@@ -81,6 +126,8 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
       app.getInputManager().setCursorVisible(false);
       process_server_intputs();
       majHUD();
+      player_move();
+      
   }
   
   private void redefine_entity_from_description(Node redefined_node, EntityDescription description) {
@@ -105,6 +152,23 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
       geom.setMaterial(mat);
       redefined_node.attachChild(geom);
       
+  }
+  
+  private void player_move() {
+    Vector3f camDir = app.getCam().getDirection().clone().multLocal(0.6f);
+    Vector3f camLeft = app.getCam().getLeft().clone().multLocal(0.4f);
+    walkDirection.set(0, 0, 0);
+    if (player.left)  { walkDirection.addLocal(camLeft); }
+    if (player.right) { walkDirection.addLocal(camLeft.negate()); }
+    if (player.up)    { walkDirection.addLocal(camDir); }
+    if (player.down)  { walkDirection.addLocal(camDir.negate()); }
+    control_of_player.setWalkDirection(walkDirection);
+    Vector3f aimed_position = walkDirection.mult(10f).add(control_of_player.getPhysicsLocation());
+    Vector3f looked_position = control_of_player.getViewDirection().add(control_of_player.getPhysicsLocation());
+    PlayerIntent player_intent = new PlayerIntent(aimed_position.x,aimed_position.z,looked_position.x, looked_position.z);
+    client.sendTCP(player_intent);
+    
+    app.getCam().setLocation(control_of_player.getPhysicsLocation());
   }
   
   /** genere une entitée encore inexistante dans le graphe de la scène */
@@ -174,7 +238,6 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
       CollisionResults results = new CollisionResults();
       Ray ray = new Ray(cam.getLocation(), cam.getDirection());
       entities_node.collideWith(ray, results);
-      
       */
       
     Element niftyElement = nifty.getCurrentScreen().findElementByName("nomperso");
@@ -260,6 +323,19 @@ public class GameSessionController extends AbstractAppState implements ScreenCon
     public void onStartScreen() {
   }
 
+  private void setUpKeys() {
+    app.getInputManager().addMapping("Left", new KeyTrigger(KeyInput.KEY_A));
+    app.getInputManager().addMapping("Right", new KeyTrigger(KeyInput.KEY_D));
+    app.getInputManager().addMapping("Up", new KeyTrigger(KeyInput.KEY_W));
+    app.getInputManager().addMapping("Down", new KeyTrigger(KeyInput.KEY_S));
+    app.getInputManager().addMapping("Jump", new KeyTrigger(KeyInput.KEY_SPACE));
+    app.getInputManager().addListener(player_input_listener, "Left");
+    app.getInputManager().addListener(player_input_listener, "Right");
+    app.getInputManager().addListener(player_input_listener, "Up");
+    app.getInputManager().addListener(player_input_listener, "Down");
+    app.getInputManager().addListener(player_input_listener, "Jump");
+}
+  
   @Override
     public void onEndScreen() {
   }
